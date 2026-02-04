@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Ticket, Users, BarChart3, LogOut, Bell, Search } from 'lucide-react';
 import { logout, reset } from '../../modules/auth/authSlice';
+import NotificationBell from './NotificationBell'; // Import the new component
 
 const MainLayout = () => {
     const navigate = useNavigate();
@@ -92,10 +93,8 @@ const MainLayout = () => {
                     </div>
 
                     <div className="flex items-center space-x-6">
-                        <button className="relative p-2 text-slate-500 hover:text-blue-600 transition-colors">
-                            <Bell size={20} />
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-                        </button>
+                        <NotificationBell /> {/* This is the new component */}
+                        
                         <div className="h-8 w-px bg-slate-200"></div>
                         <div className="text-right">
                             <p className="text-sm font-semibold text-slate-800">{user?.name}</p>

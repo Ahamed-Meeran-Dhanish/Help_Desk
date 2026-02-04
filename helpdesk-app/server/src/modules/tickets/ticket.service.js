@@ -1,22 +1,41 @@
 import Ticket from './ticket.model.js';
 import TicketLog from './ticketLog.model.js';
+import User from '../users/user.model.js';
+import notificationService from '../notifications/notification.service.js';
 import { ApiError } from '../../utils/apiResponse.js';
 
 export const createTicket = async (ticketData, userId) => {
-    const ticket = await Ticket.create({
-        ...ticketData,
-        createdBy: userId,
-    });
+    try {
+        const ticket = await Ticket.create({
+            ...ticketData,
+            createdBy: userId,
+        });
 
-    // Log the creation
-    await TicketLog.create({
-        ticket: ticket._id,
-        action: 'Ticket Created',
-        performedBy: userId,
-        newValue: ticket.toObject() // Log initial state
-    });
+        // Log the creation
+        await TicketLog.create({
+            ticket: ticket._id,
+            action: 'Ticket Created',
+            performedBy: userId,
+            newValue: ticket.toObject() // Log initial state
+        });
 
-    return ticket;
+        // 🔔 NEW: Trigger notification for ticket creation
+        try {
+            const creator = await User.findById(userId);
+            await notificationService.notifyTicketCreation(
+                ticket,
+                creator.name,
+                creator.email
+            );
+        } catch (notifError) {
+            console.error('Error sending ticket creation notification:', notifError);
+            // Don't throw - notification failure shouldn't stop ticket creation
+        }
+
+        return ticket;
+    } catch (error) {
+        throw error;
+    }
 };
 
 export const getAllTickets = async (query, user) => {
@@ -45,8 +64,6 @@ export const getAllTickets = async (query, user) => {
     if (query.priority) filter.priority = query.priority;
     // For agents/admins filtering by specific assignee
     if (query.assignedTo) {
-        // If they are strictly filtering, we might need to respect that within their allowed scope
-        // For simplicity, let's just add it to the filter object
         filter.assignedTo = query.assignedTo;
     }
 
@@ -117,6 +134,19 @@ export const updateTicket = async (id, updateData, user) => {
             oldValue: { status: oldValue.status },
             newValue: { status: updateData.status }
         });
+
+        // 🔔 NEW: Trigger notification for status change
+        try {
+            await notificationService.createNotification(
+                ticket.createdBy,
+                'TICKET_UPDATED',
+                'Ticket Status Updated',
+                `Your ticket #${ticket._id} status changed to ${updateData.status}`,
+                ticket._id
+            );
+        } catch (notifError) {
+            console.error('Error sending status notification:', notifError);
+        }
     }
 
     if (updateData.assignedTo && updateData.assignedTo.toString() !== (oldValue.assignedTo ? oldValue.assignedTo.toString() : '')) {
@@ -127,10 +157,23 @@ export const updateTicket = async (id, updateData, user) => {
             oldValue: { assignedTo: oldValue.assignedTo },
             newValue: { assignedTo: updateData.assignedTo }
         });
-    }
 
-    // Generic log if it wasn't one of the above, or added as extra detail? 
-    // keeping it simple for now, only logging critical transitions.
+        // 🔔 NEW: Trigger notification for ticket assignment
+        try {
+            const agent = await User.findById(updateData.assignedTo);
+            if (agent) { // Ensure agent is found before trying to notify
+                await notificationService.notifyTicketAssignment(
+                    ticket,
+                    agent.email,
+                    agent.name
+                );
+            } else {
+                console.error('Assigned agent not found for notification:', updateData.assignedTo);
+            }
+        } catch (notifError) {
+            console.error('Error sending assignment notification:', notifError);
+        }
+    }
 
     return ticket;
 };
@@ -148,10 +191,6 @@ export const deleteTicket = async (id, user) => {
 };
 
 export const getTicketLogs = async (ticketId, user) => {
-    // Re-using access control logic often is good, but let's trust the controller to check existence first? 
-    // Actually, good practice to check access here too or assume controller did it. 
-    // For safety let's just fetch it. Access check should be consistent with getTicketById.
-
     // Check ticket existence
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) throw new ApiError(404, 'Ticket not found');
