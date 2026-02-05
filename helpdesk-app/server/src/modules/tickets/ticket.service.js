@@ -19,7 +19,7 @@ export const createTicket = async (ticketData, userId) => {
             newValue: ticket.toObject() // Log initial state
         });
 
-        // 🔔 NEW: Trigger notification for ticket creation
+        // Trigger notification for ticket creation
         try {
             const creator = await User.findById(userId);
             await notificationService.notifyTicketCreation(
