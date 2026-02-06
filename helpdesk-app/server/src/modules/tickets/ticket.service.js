@@ -19,7 +19,7 @@ export const createTicket = async (ticketData, userId) => {
             newValue: ticket.toObject() // Log initial state
         });
 
-        // 🔔 NEW: Trigger notification for ticket creation
+        // Trigger notification for ticket creation
         try {
             const creator = await User.findById(userId);
             await notificationService.notifyTicketCreation(
@@ -135,7 +135,7 @@ export const updateTicket = async (id, updateData, user) => {
             newValue: { status: updateData.status }
         });
 
-        // 🔔 NEW: Trigger notification for status change
+        // Trigger notification for status change
         try {
             await notificationService.createNotification(
                 ticket.createdBy,
@@ -158,7 +158,7 @@ export const updateTicket = async (id, updateData, user) => {
             newValue: { assignedTo: updateData.assignedTo }
         });
 
-        // 🔔 NEW: Trigger notification for ticket assignment
+        //Trigger notification for ticket assignment
         try {
             const agent = await User.findById(updateData.assignedTo);
             if (agent) { // Ensure agent is found before trying to notify

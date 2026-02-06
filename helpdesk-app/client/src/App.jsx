@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import 'react-toastify/dist/ReactToastify.css'; // Don't forget the CSS
 
 // Layouts
 import MainLayout from './shared/components/MainLayout';
@@ -36,7 +36,7 @@ function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      <ToastContainer />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
     </>
   );
 }
