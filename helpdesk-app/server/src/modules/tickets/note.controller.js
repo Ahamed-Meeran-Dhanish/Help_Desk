@@ -70,7 +70,7 @@ export const addNote = async (req, res, next) => {
             newValue: { text: note.text, isInternal: note.isInternal }
         });
 
-        // 🔔 NEW: Trigger notification for external notes only
+        // Trigger notification for external notes only
         if (!note.isInternal) {
             try {
                 const author = await User.findById(req.user.id);

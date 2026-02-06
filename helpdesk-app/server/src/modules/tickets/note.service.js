@@ -20,7 +20,7 @@ export const createNote = async (ticketId, noteData, userId) => {
             isInternal: noteData.isInternal || false
         });
 
-        // 🔔 NEW: Trigger notification if external note
+        // Trigger notification if external note
         if (!noteData.isInternal) {
             try {
                 const author = await User.findById(userId);
